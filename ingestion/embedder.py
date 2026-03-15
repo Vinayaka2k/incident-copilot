@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     chunks = load_chunks(chunks_path)
     model = SentenceTransformer("")
-    texts = [chunks["text"] for chunk in chunks]
+    texts = [chunk["text"] for chunk in chunks]
 
     embeddings = embed_texts(texts, model=model, batch_size=32)
     embedded_chunks = attach_embeddings(chunks, embeddings)
