@@ -34,13 +34,14 @@ def dense_search(client: QdrantClient, collection_name: str, query_vector: List[
     """
     Perform a dense vector search in Qdrant
     """
-    results = client.search(
+    response = client.query_points(
         collection_name = collection_name,
-        query_vector = query_vector,
-        limit = limit
+        query = query_vector,
+        limit = limit,
+        with_payload=True
     )
     formatted_results = []
-    for hit in results:
+    for hit in response.points:
         formatted_results.append({
             "id": hit.id,
             "score": hit.score,
@@ -63,9 +64,9 @@ if __name__ == "__main__":
     print(f"Found {len(results)} results\n")
     for i, result in enumerate(results, start=1):
         print(f"Result: {i}")
-        print(f"Score: {result["score"]}")
-        print(f"File: {result["filename"]}")
-        print(f"Type: {result["doc_type"]}")
-        print(f"Chunk Id: {result["global_chunk_id"]}")
-        print(f"Text: {result["text"]}")
+        print(f"Score: {result['score']}")
+        print(f"File: {result['filename']}")
+        print(f"Type: {result['doc_type']}")
+        print(f"Chunk Id: {result['global_chunk_id']}")
+        print(f"Text: {result['text']}")
         print("-"*60)
