@@ -71,7 +71,7 @@ if __name__ == "__main__":
     if not embedded_chunks:
         raise ValueError("No embedded chunks found")
     vector_size = len(embedded_chunks[0]["embedding"])
-    client = QdrantClient(host="localhost", port=6333)
+    client = QdrantClient(host="localhost", port=6334)
     create_collection(client, COLLECTION_NAME, vector_size)
     points = build_points(embedded_chunks)
     upload_points(client, COLLECTION_NAME, points)
