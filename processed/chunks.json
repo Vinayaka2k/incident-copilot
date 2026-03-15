@@ -1,0 +1,146 @@
+[
+  {
+    "text": "# Runbook: Kubernetes CrashLoopBackOff\n\n## Symptoms\n\n* Pod repeatedly restarting\n* `CrashLoopBackOff` status in Kubernetes\n* Service unavailable\n\n## Possible Causes\n\n* Bad deployment config\n* Missing environment variable\n* Dependency service unavailable\n* Container memory limit exceeded\n\n## Diagnosis Steps\n\n1. Inspect container logs.\n2. Check environment variables.\n3. Verify dependent services.\n4. Inspect resource usage.\n\n## Resolution\n\n* Rollback deployment.\n* Fix configuration errors.\n* Increase resource limits if needed.\n\n## Escalation\n\nService Owner Team",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\container_crashloop.md",
+      "filename": "container_crashloop.md",
+      "doc_type": "runbooks",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "container_crashloop.md",
+      "global_chunk_id": "container_crashloop.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Runbook: Database Connection Exhaustion\n\n## Symptoms\n\n* Errors: \"too many connections\"\n* Slow queries\n* Application timeouts\n\n## Possible Causes\n\n* Connection pool misconfiguration\n* Query locks\n* Long running transactions\n\n## Diagnosis Steps\n\n1. Check DB connection pool metrics.\n2. Identify long running queries.\n3. Inspect query lock status.\n\n## Resolution\n\n* Restart application instances.\n* Tune connection pool settings.\n* Kill long-running queries.\n\n## Escalation\n\nDatabase Operations Team",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\db_connection_exhaustion.md",
+      "filename": "db_connection_exhaustion.md",
+      "doc_type": "runbooks",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "db_connection_exhaustion.md",
+      "global_chunk_id": "db_connection_exhaustion.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Runbook: Kafka Consumer Lag\n\n## Symptoms\n\n* Consumer lag exceeding threshold\n* Delayed event processing\n* Backlog in event pipelines\n\n## Possible Causes\n\n* Consumer crash or restart loop\n* Downstream database slowdown\n* Large message bursts\n* Broker overload\n\n## Diagnosis Steps\n\n1. Check Kafka consumer group lag metrics.\n2. Inspect consumer logs.\n3. Verify broker health.\n4. Check downstream DB write latency.\n\n## Resolution\n\n* Restart consumer pods.\n* Increase consumer replica count.\n* Rebalance partitions.\n\n## Escalation\n\nData Platform Team",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\kafka_consumer_lag.md",
+      "filename": "kafka_consumer_lag.md",
+      "doc_type": "runbooks",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "kafka_consumer_lag.md",
+      "global_chunk_id": "kafka_consumer_lag.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Runbook: Payment Service Timeout\n\n## Symptoms\n\n* HTTP 504 errors on `/charge`\n* Payment API latency above 2 seconds\n* Increase in checkout failures\n* Alerts triggered: `payment_latency_p95`\n\n## Possible Causes\n\n* Redis latency\n* Database connection pool exhaustion\n* Recent deployment introducing retry storms\n* Downstream dependency slowdown\n\n## Diagnosis Steps\n\n1. Check if a deployment occurred in the last 30 minutes.\n2. Inspect Redis latency dashboard.\n3. Verify database connection pool usage.\n4. Check worker queue backlog.\n5. Inspect payment-service logs.\n\n## Resolution\n\n* Roll back recent",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\payment_timeout.md",
+      "filename": "payment_timeout.md",
+      "doc_type": "runbooks",
+      "chunk_id": 0,
+      "total_chunks": 2,
+      "doc_id": "payment_timeout.md",
+      "global_chunk_id": "payment_timeout.md_chunk_0"
+    }
+  },
+  {
+    "text": ".\n4. Check worker queue backlog.\n5. Inspect payment-service logs.\n\n## Resolution\n\n* Roll back recent deployment if latency spike started after release.\n* Restart payment worker pods.\n* Increase connection pool size if exhaustion is observed.\n\n## Escalation\n\nPayments Platform Team",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\payment_timeout.md",
+      "filename": "payment_timeout.md",
+      "doc_type": "runbooks",
+      "chunk_id": 1,
+      "total_chunks": 2,
+      "doc_id": "payment_timeout.md",
+      "global_chunk_id": "payment_timeout.md_chunk_1"
+    }
+  },
+  {
+    "text": "# Runbook: Redis Latency\n\n## Symptoms\n\n* Increased API latency across services\n* Redis operations exceeding 100ms\n* Cache hit ratio dropping\n* Timeout errors in dependent services\n\n## Possible Causes\n\n* Redis node CPU saturation\n* Network congestion\n* Large key eviction cycles\n* Failover event\n\n## Diagnosis Steps\n\n1. Check Redis CPU and memory usage.\n2. Inspect network packet loss.\n3. Review Redis slowlog.\n4. Verify cluster failover events.\n\n## Resolution\n\n* Restart Redis node if safe.\n* Scale Redis cluster.\n* Flush problematic large keys if necessary.\n\n## Escalation\n\nInfrastructure Platform T",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\redis_latency.md",
+      "filename": "redis_latency.md",
+      "doc_type": "runbooks",
+      "chunk_id": 0,
+      "total_chunks": 2,
+      "doc_id": "redis_latency.md",
+      "global_chunk_id": "redis_latency.md_chunk_0"
+    }
+  },
+  {
+    "text": "edis cluster.\n* Flush problematic large keys if necessary.\n\n## Escalation\n\nInfrastructure Platform Team",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\runbooks\\redis_latency.md",
+      "filename": "redis_latency.md",
+      "doc_type": "runbooks",
+      "chunk_id": 1,
+      "total_chunks": 2,
+      "doc_id": "redis_latency.md",
+      "global_chunk_id": "redis_latency.md_chunk_1"
+    }
+  },
+  {
+    "text": "# Incident INC-1023: Payment Timeout\n\n## Summary\n\nCheckout failures occurred due to payment service timeouts.\n\n## Timeline\n\n10:01 Deploy version 4.3\n10:03 Payment latency spike\n10:05 Alerts triggered\n10:08 Engineers investigated Redis latency\n10:12 Rollback initiated\n10:15 System recovered\n\n## Root Cause\n\nRedis node experienced high CPU usage due to increased traffic.\n\n## Resolution\n\nRollback deployment and scale Redis cluster.\n\n## Lessons Learned\n\nAdd autoscaling to Redis cluster.",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\incidents\\inc_1023_payment_timeout.md",
+      "filename": "inc_1023_payment_timeout.md",
+      "doc_type": "incidents",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "inc_1023_payment_timeout.md",
+      "global_chunk_id": "inc_1023_payment_timeout.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Incident INC-1188: Retry Storm After Deployment\n\n## Summary\n\nA retry logic bug caused massive retry loops in the payment service.\n\n## Timeline\n\n09:58 Deploy version 4.5\n10:02 Error rate spike\n10:04 Checkout failures reported\n10:06 Engineers detected retry storm\n10:10 Rollback deployed\n10:13 Service stabilized\n\n## Root Cause\n\nIncorrect retry logic introduced in deployment.\n\n## Resolution\n\nRollback deployment and patch retry logic.\n\n## Lessons Learned\n\nAdd integration test for retry scenarios.",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\incidents\\inc_1188_retry_storm.md",
+      "filename": "inc_1188_retry_storm.md",
+      "doc_type": "incidents",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "inc_1188_retry_storm.md",
+      "global_chunk_id": "inc_1188_retry_storm.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Incident INC-1342: Worker CrashLoopBackOff\n\n## Summary\n\nPayment worker pods repeatedly restarted.\n\n## Timeline\n\n14:02 Deployment applied\n14:04 Pods started crashing\n14:06 Alert triggered\n14:09 Logs revealed missing environment variable\n14:12 Fix deployed\n\n## Root Cause\n\nConfiguration change removed required environment variable.\n\n## Resolution\n\nRestore environment variable and redeploy service.\n\n## Lessons Learned\n\nAdd configuration validation to deployment pipeline.",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\incidents\\inc_1342_worker_crashloop.md",
+      "filename": "inc_1342_worker_crashloop.md",
+      "doc_type": "incidents",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "inc_1342_worker_crashloop.md",
+      "global_chunk_id": "inc_1342_worker_crashloop.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Incident INC-1450: Kafka Consumer Lag\n\n## Summary\n\nOrder processing delays due to Kafka consumer lag.\n\n## Timeline\n\n11:00 Consumer lag increased\n11:05 Alerts triggered\n11:08 Engineers identified overloaded consumer\n11:15 Scaled consumer replicas\n11:20 Lag resolved\n\n## Root Cause\n\nTraffic spike overwhelmed single consumer instance.\n\n## Resolution\n\nIncrease consumer replicas and rebalance partitions.\n\n## Lessons Learned\n\nImplement auto-scaling based on consumer lag.",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\incidents\\inc_1450_kafka_lag.md",
+      "filename": "inc_1450_kafka_lag.md",
+      "doc_type": "incidents",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "inc_1450_kafka_lag.md",
+      "global_chunk_id": "inc_1450_kafka_lag.md_chunk_0"
+    }
+  },
+  {
+    "text": "# Incident INC-1560: Database Connection Exhaustion\n\n## Summary\n\nCheckout API returned errors due to exhausted DB connections.\n\n## Timeline\n\n16:10 Increased API errors\n16:12 Alerts fired\n16:15 Engineers identified connection pool exhaustion\n16:18 Restarted application pods\n16:20 System recovered\n\n## Root Cause\n\nConnection pool size too small for traffic spike.\n\n## Resolution\n\nIncrease connection pool size.\n\n## Lessons Learned\n\nTune connection pools based on peak traffic.",
+    "metadata": {
+      "source": "C:\\Users\\Vinayaka Hegde\\Desktop\\proj\\incident-copilot\\data\\incidents\\inc_1560_db_connections.md",
+      "filename": "inc_1560_db_connections.md",
+      "doc_type": "incidents",
+      "chunk_id": 0,
+      "total_chunks": 1,
+      "doc_id": "inc_1560_db_connections.md",
+      "global_chunk_id": "inc_1560_db_connections.md_chunk_0"
+    }
+  }
+]

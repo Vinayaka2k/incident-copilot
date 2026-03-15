@@ -1,4 +1,5 @@
 from typing import List, Dict
+import json
 def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> List[str]:
     """
     Split text into overlapping character-based chunks.
@@ -65,14 +66,16 @@ if __name__ == "__main__":
     from pathlib import Path
     base_dir = Path(__file__).resolve().parent.parent
     data_dir = base_dir / "data"
+    output_dir = base_dir / "processed"
+    output_dir.mkdir(exist_ok=True)
     docs = load_markdown_files(data_dir)
     chunks = chunk_documents(docs, chunk_size=600, overlap=100)
+    output_file = output_dir / "chunks.json"
+    with open(output_file, "w", encoding="utf-8") as f:
+        json.dump(chunks, f, indent=2)
     print(f"Loaded {len(docs)} documents")
     print(f"Created {len(chunks)} chunks")
-    for chunk in chunks[:3]:
-        print("\n---")
-        print(chunk["metadata"])
-        print(chunk["text"][:200])
+    print(f"Saved chunks to {output_file}")
 
 
 
