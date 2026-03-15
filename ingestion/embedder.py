@@ -32,7 +32,7 @@ def attach_embeddings(chunks: List[Dict], embeddings: List[List[float]]) -> List
     if len(chunks) != len(embeddings):
         raise ValueError("Number of chunks and embeddings must match")
     embedded_chunks = []
-    for chunk, embedding in zip(chunk, embeddings):
+    for chunk, embedding in zip(chunks, embeddings):
         embedded_chunks.append({
             "id": chunk["metadata"]["global_chunk_id"],
             "text": chunk["text"],
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     output_path = processed_dir / "embedded_chunks.json"
 
     chunks = load_chunks(chunks_path)
-    model = SentenceTransformer("")
+    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
     texts = [chunk["text"] for chunk in chunks]
 
     embeddings = embed_texts(texts, model=model, batch_size=32)
