@@ -2,7 +2,7 @@ import json
 import re
 from pathlib import Path
 from typing import List, Dict, Any
-from rank_bm25 import BM25OKapi
+from rank_bm25 import BM25Okapi
 CHUNKS_PATH = Path("processed/chunks.json")
 
 def tokenize(text: str) -> List[str]:
@@ -34,7 +34,7 @@ class BM25KeywordSearcher:
             raise ValueError("No chunks provided to BM25 searcher")
         self.chunks = chunks
         self.tokenized_corpus = [tokenize(chunk.get("text", "")) for chunk in chunks]
-        self.bm25 = BM25OKapi(self.tokenized_corpus)
+        self.bm25 = BM25Okapi(self.tokenized_corpus)
 
     def search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
         """
