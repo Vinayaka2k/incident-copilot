@@ -1,5 +1,19 @@
 from typing import List, Dict
 import json
+
+# def chunk_text(text: str, chunk_size: int = 500, overlap: int = 50) -> List[str]:
+#     if overlap >= chunk_size:
+#         raise ValueError("Overlap must be smaller than the chunk size")
+#     step = chunk_size - overlap
+#     for start in range(0, len(text), step):
+#         end = min(len(text), start + chunk_size)
+#         chunk = text[start:end].strip()
+#         if chunk:
+#             chunks.append(chunk)
+#         if end == len(text):
+#             break
+#     return chunks
+
 def chunk_text(text: str, chunk_size: int = 600, overlap: int = 100) -> List[str]:
     """
     Split text into overlapping character-based chunks.
@@ -69,6 +83,7 @@ if __name__ == "__main__":
     output_dir = base_dir / "processed"
     output_dir.mkdir(exist_ok=True)
     docs = load_markdown_files(data_dir)
+    # print(docs)
     chunks = chunk_documents(docs, chunk_size=600, overlap=100)
     output_file = output_dir / "chunks.json"
     with open(output_file, "w", encoding="utf-8") as f:

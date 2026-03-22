@@ -10,7 +10,7 @@ def get_qdrant_client() -> QdrantClient:
     """
     Create and return a Qdrant client
     """
-    return QdrantClient(host="localhost", port=6334)
+    return QdrantClient(host="localhost", port=6333)
 
 def get_embedding_model() -> SentenceTransformer:
     """

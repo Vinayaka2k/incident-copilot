@@ -61,7 +61,7 @@ def upload_points(client: QdrantClient, collection_name: str, points: List[Point
     for start in range(0, len(points), batch_size):
         batch = points[start: start+batch_size]
         client.upsert(collection_name=collection_name, points=batch)
-        print(f"Uploaded {start+len(batch)} / {len(points)} points")
+        print(f"Uploaded {start+batch_size} / {len(points)} points")
 
 if __name__ == "__main__":
     base_dir = Path(__file__).resolve().parent.parent
@@ -71,7 +71,7 @@ if __name__ == "__main__":
     if not embedded_chunks:
         raise ValueError("No embedded chunks found")
     vector_size = len(embedded_chunks[0]["embedding"])
-    client = QdrantClient(host="localhost", port=6334)
+    client = QdrantClient(host="localhost", port=6333)
     create_collection(client, COLLECTION_NAME, vector_size)
     points = build_points(embedded_chunks)
     upload_points(client, COLLECTION_NAME, points)
