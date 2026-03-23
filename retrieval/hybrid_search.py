@@ -1,12 +1,12 @@
 from typing import List, Dict, Any, Tuple
-from dense_search import (
+from retrieval.dense_search import (
     get_qdrant_client,
     get_embedding_model,
     embed_query,
     dense_search,
     COLLECTION_NAME
 )
-from keyword_search import keyword_search
+from retrieval.keyword_search import keyword_search
 
 def make_result_key(result: Dict[str, Any]) -> Tuple:
     return (

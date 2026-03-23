@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from sentence_transformers import CrossEncoder
-from hybrid_search import hybrid_search
+from retrieval.hybrid_search import hybrid_search
 RERANK_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
 
 def get_reranker() -> CrossEncoder:
