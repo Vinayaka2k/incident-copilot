@@ -9,7 +9,7 @@ def get_client():
     Initialize Gemini client.
     Assumes GEMINI_API_KEY has been set
     """
-    return genai.Client()
+    return genai.Client(api_key="AIzaSyCThrHM0CA-7ONbuso5rQoi8SiXugXXEfE")
 
 def build_context(results: List[Dict[str, Any]]) -> str:
     """
