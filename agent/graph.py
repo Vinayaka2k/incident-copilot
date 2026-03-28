@@ -26,13 +26,6 @@ def build_graph():
     # Compile graph
     return graph.compile()
 
-incident_graph = build_graph()
-
-result = incident_graph.invoke({
-    "incident": "Payment service timeout after deployment, many requests failing with deadline exceeded"
-})
-print(result)
-
 
 
 
