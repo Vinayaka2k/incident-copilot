@@ -13,7 +13,7 @@ MODEL_NAME = "gemini-2.5-flash"
 
 class IncidentState(TypedDict, total=False):
     """
-    Shared state passed linearly across the 4 nodes.
+    Shared state passed across the LangGraph nodes.
     """
     incident: str
     analysis: Dict[str, Any]
@@ -25,24 +25,31 @@ class IncidentState(TypedDict, total=False):
     evidence: List[Dict[str, str]]
 
 
-genai_client: Optional[genai.Client] = None
+_genai_client: Optional[genai.Client] = None
 
 
 def get_client() -> genai.Client:
     """
-    Initialize Gemini client from GEMINI_API_KEY environment variable.
+    Initialize and cache the Gemini client from GEMINI_API_KEY.
     """
+    global _genai_client
+
+    if _genai_client is not None:
+        return _genai_client
+
     api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise ValueError("GEMINI_API_KEY environment variable is not set")
-    return genai.Client(api_key=api_key)
+
+    _genai_client = genai.Client(api_key=api_key)
+    return _genai_client
 
 
 def _client() -> genai.Client:
     """
-    Return reusable client if already initialized, else create one.
+    Return a reusable Gemini client.
     """
-    return genai_client if genai_client is not None else get_client()
+    return get_client()
 
 
 def _generate_text(prompt: str, client: Optional[genai.Client] = None) -> str:
@@ -50,6 +57,7 @@ def _generate_text(prompt: str, client: Optional[genai.Client] = None) -> str:
     Helper to call Gemini and return plain text output.
     """
     active_client = client or _client()
+
     response = active_client.models.generate_content(
         model=MODEL_NAME,
         contents=prompt,
@@ -64,14 +72,16 @@ def _generate_text(prompt: str, client: Optional[genai.Client] = None) -> str:
 
 def _extract_json_object(text: str) -> Dict[str, Any]:
     """
-    Parse a JSON object from LLM output.
+    Parse a JSON object from the model output.
+
     Handles:
     - raw JSON
     - fenced JSON blocks
-    - text containing one JSON object
+    - text containing a JSON object
     """
     text = text.strip()
 
+    # Case 1: raw JSON
     try:
         parsed = json.loads(text)
         if isinstance(parsed, dict):
@@ -79,8 +89,9 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
     except json.JSONDecodeError:
         pass
 
+    # Case 2: fenced JSON block
     fenced_match = re.search(
-        r"```(?:json)?\s*(\{.*\})\s*```",
+        r"```(?:json)?\s*(\{.*?\})\s*```",
         text,
         flags=re.DOTALL,
     )
@@ -93,6 +104,7 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
         except json.JSONDecodeError:
             pass
 
+    # Case 3: loose JSON object inside extra text
     loose_match = re.search(r"(\{.*\})", text, flags=re.DOTALL)
     if loose_match:
         candidate = loose_match.group(1)
@@ -103,7 +115,7 @@ def _extract_json_object(text: str) -> Dict[str, Any]:
         except json.JSONDecodeError:
             pass
 
-    raise ValueError("Could not parse JSON object from model output")
+    raise ValueError("Could not parse JSON object from the model output")
 
 
 def _safe_list_of_strings(value: Any) -> List[str]:
@@ -120,19 +132,20 @@ def _safe_list_of_strings(value: Any) -> List[str]:
         text = str(item).strip()
         if text:
             output.append(text)
+
     return output
 
 
 def _build_context(results: List[Dict[str, Any]]) -> str:
     """
-    Combine retrieved chunks into a single context string.
+    Combine retrieved chunks into a single grounded context string.
     """
     parts: List[str] = []
 
     for i, result in enumerate(results, start=1):
         filename = result.get("filename", "unknown")
         chunk_index = result.get("chunk_index", "unknown")
-        text = result.get("text", "")
+        text = str(result.get("text", "")).strip()
 
         parts.append(
             f"[Source {i}] filename={filename}, chunk_index={chunk_index}\n{text}"
@@ -141,7 +154,7 @@ def _build_context(results: List[Dict[str, Any]]) -> str:
     return "\n\n".join(parts)
 
 
-def analyze_incident_node(state: IncidentState) -> IncidentState:
+def analyze_incident_node(state: IncidentState) -> Dict[str, Any]:
     """
     Node 1: Lightweight incident analysis with no LLM call.
 
@@ -187,6 +200,7 @@ def analyze_incident_node(state: IncidentState) -> IncidentState:
         "database",
         "db",
     ]
+
     for hint in service_hints:
         if hint in lowered:
             service_or_component = hint
@@ -208,12 +222,11 @@ def analyze_incident_node(state: IncidentState) -> IncidentState:
     }
 
     return {
-        **state,
         "analysis": analysis,
     }
 
 
-def rewrite_query_node(state: IncidentState) -> IncidentState:
+def rewrite_query_node(state: IncidentState) -> Dict[str, Any]:
     """
     Node 2: Rewrite the incident into a retrieval-optimized query.
     LLM call #1
@@ -265,12 +278,11 @@ Keywords:
         raise ValueError("rewrite_query_node produced an empty query")
 
     return {
-        **state,
         "rewritten_query": rewritten_query,
     }
 
 
-def incident_search_node(state: IncidentState) -> IncidentState:
+def incident_search_node(state: IncidentState) -> Dict[str, Any]:
     """
     Node 3: Search the incident knowledge base.
     No LLM call.
@@ -291,14 +303,13 @@ def incident_search_node(state: IncidentState) -> IncidentState:
         raise ValueError("hybrid_search_with_rerank did not return a list")
 
     return {
-        **state,
         "retrieved_docs": results,
     }
 
 
-def triage_planning_node(state: IncidentState) -> IncidentState:
+def triage_planning_node(state: IncidentState) -> Dict[str, Any]:
     """
-    Node 4: Generate final grounded triage plan.
+    Node 4: Generate the final grounded triage plan.
     LLM call #2
     """
     incident = state.get("incident", "").strip()
@@ -374,7 +385,6 @@ Retrieved context:
                 )
 
     return {
-        **state,
         "incident_type": incident_type,
         "hypotheses": hypotheses,
         "next_steps": next_steps,
