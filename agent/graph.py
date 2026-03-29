@@ -26,7 +26,7 @@ def build_graph():
     # Compile graph
     return graph.compile()
 
-
+incident_graph = build_graph()
 
 
 

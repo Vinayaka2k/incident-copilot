@@ -38,7 +38,6 @@ class IncidentResponse(BaseModel):
 def health() -> Dict[str, str]:
     return {"status": "ok"}
 
-
 @app.post("/triage", response_model=IncidentResponse)
 def triage_incident(request: IncidentRequest) -> IncidentResponse:
     try:
@@ -59,8 +58,9 @@ def triage_incident(request: IncidentRequest) -> IncidentResponse:
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
-
 
 if __name__ == "__main__":
     import uvicorn

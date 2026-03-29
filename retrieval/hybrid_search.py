@@ -1,12 +1,12 @@
 from typing import List, Dict, Any, Tuple
-from retrieval.dense_search import (
+from dense_search import (
     get_qdrant_client,
     get_embedding_model,
     embed_query,
     dense_search,
     COLLECTION_NAME
 )
-from retrieval.keyword_search import keyword_search
+from keyword_search import keyword_search
 
 def make_result_key(result: Dict[str, Any]) -> Tuple:
     return (
@@ -33,6 +33,7 @@ def reciprocal_rank_fusion(ranked_lists: List[List[Dict[str,Any]]],
             source_type = result.get("_retrieval_source")
             if source_type and source_type not in fused[key]["sources"]:
                 fused[key]["sources"].append(source_type)
+    print(fused)
     merged_results = []
     for item in fused.values():
         merged = item["result"]
@@ -40,6 +41,7 @@ def reciprocal_rank_fusion(ranked_lists: List[List[Dict[str,Any]]],
         merged["retrieval_sources"] = item["sources"]
         merged_results.append(merged)
     merged_results.sort(key=lambda x:x["hybrid_score"], reverse=True)
+    print(merged_results)
     return merged_results
 
 def hybrid_search(query: str, dense_limit: int = 10, keyword_limit: int = 10, 
