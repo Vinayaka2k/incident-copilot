@@ -87,13 +87,12 @@ def create_index(client: OpenSearch, index_name: str, vector_size: int) -> None:
 
 def build_documents(embedded_chunks: List[Dict]) -> List[Dict]:
     """
-    Convert embedded chunks into OpenSearch bulk documents
+    Convert embedded chunks into OpenSearch documents (no _id for Serverless)
     """
     documents = []
     for idx, chunk in enumerate(embedded_chunks):
         doc = {
             "_index": INDEX_NAME,
-            "_id": str(idx),
             "_source": {
                 "embedding": chunk["embedding"],
                 "text": chunk["text"],
