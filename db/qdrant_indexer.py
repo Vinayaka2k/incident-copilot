@@ -80,7 +80,6 @@ def create_index(client: OpenSearch, index_name: str, vector_size: int) -> None:
             print(f"Created index {INDEX_NAME} with vecor size {vector_size}")
     }
 
-def build_documents(emebedded_chunks: List[Dict])
 
 
 
