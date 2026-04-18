@@ -38,7 +38,8 @@ def get_opensearch_client() -> OpenSearch:
         http_auth=auth,
         use_ssl=True,
         verify_certs=True,
-        connection_class=RequestsHttpConnection
+        connection_class=RequestsHttpConnection,
+        timeout=60
     )
     return client
 
@@ -109,7 +110,7 @@ def build_documents(embedded_chunks: List[Dict]) -> List[Dict]:
     return documents
 
 
-def upload_documents(client: OpenSearch, documents: List[Dict], batch_size: int = 64) -> None:
+def upload_documents(client: OpenSearch, documents: List[Dict], batch_size: int = 10) -> None:
     """
     Upload documents to OpenSearch in batches
     """
