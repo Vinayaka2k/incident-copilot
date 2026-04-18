@@ -66,11 +66,21 @@ def create_index(client: OpenSearch, index_name: str, vector_size: int) -> None:
                         "engine": "faiss",
                         "space_type": "cosinesimil"
                     }
-                }
-
+                },
+                "text": {"type": "text"},
+                "source": {"type": "keyword"},
+                "filename": {"type": "keyword"},
+                "doc_type": {"type": "keyword"},
+                "chunk_index": {"type": "integer"},
+                "total_chunks": {"type": "inetgeer"},
+                "doc_id": {"type": "keyword"},
+                "global_chunk_id": {"type": "keyword"}
             }
+            client.indcices.create(index=INDEX_NAME, body=body)
+            print(f"Created index {INDEX_NAME} with vecor size {vector_size}")
     }
 
+def build_documents(emebedded_chunks: List[Dict])
 
 
 
