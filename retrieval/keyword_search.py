@@ -1,81 +1,86 @@
 import json
-import re
-from pathlib import Path
+import boto3
 from typing import List, Dict, Any
-from rank_bm25 import BM25Okapi
-CHUNKS_PATH = Path("processed/chunks.json")
+from opensearchpy import OpenSearch, RequestsHttpConnection
+from requests_aws4auth import AWS4Auth
 
-def tokenize(text: str) -> List[str]:
-    """
-    Simple tokenizer for BM25
-    """
-    if not text:
-        return []
-    return [token for token in re.split(r"\W+", text.lower()) if token]
+INDEX_NAME = "incident_copilot-new"
+OPENSEARCH_ENDPOINT = "https://dww2xv3ocmzsmn17zb66.us-east-1.aoss.amazonaws.com"
+REGION = "us-east-1"
 
-def load_chunks(chunks_path: Path = CHUNKS_PATH) -> List[Dict[str, Any]]:
-    """
-    Load chunked documents from processed/chunks.json
-    """
-    if not chunks_path.exists():
-        raise FileNotFoundError(f"Chunks file not found: {chunks_path}")
-    with open(chunks_path, "r", encoding="utf-8") as f:
-        chunks = json.load(f)
-    if not isinstance(chunks, list):
-        raise ValueError("chunks.json must containa list of chunk records")
-    return chunks
 
-class BM25KeywordSearcher:
+def get_opensearch_client() -> OpenSearch:
     """
-    BM25 based keyword search over local chunked documents
+    Create and return an OpenSearch Serverless client
     """
-    def __init__(self, chunks: List[Dict[str, Any]]):
-        if not chunks:
-            raise ValueError("No chunks provided to BM25 searcher")
-        self.chunks = chunks
-        self.tokenized_corpus = [tokenize(chunk.get("text", "")) for chunk in chunks]
-        self.bm25 = BM25Okapi(self.tokenized_corpus)
+    credentials = boto3.Session().get_credentials()
+    auth = AWS4Auth(
+        credentials.access_key,
+        credentials.secret_key,
+        REGION,
+        "aoss",
+        session_token=credentials.token
+    )
+    host = OPENSEARCH_ENDPOINT.replace("https://", "")
+    return OpenSearch(
+        hosts=[{"host": host, "port": 443}],
+        http_auth=auth,
+        use_ssl=True,
+        verify_certs=True,
+        connection_class=RequestsHttpConnection,
+        timeout=60
+    )
 
-    def search(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
-        """
-        Return bm25 searhc results in a format consistent with dense_search.py
-        """
-        query  = query.strip()
-        if not query:
-            raise ValueError("Query cannot be emty")
-        query_tokens = tokenize(query)
-        if not query_tokens:
-            return []
-        scores = self.bm25.get_scores(query_tokens)
-        results = []
-        for idx, score in enumerate(scores):
-            chunk = self.chunks[idx]
-            results.append({
-                "id": chunk.get("id", idx),
-                "score": float(score),
-                "text": chunk.get("text"),
-               "source": chunk.get("source") or chunk.get("metadata", {}).get("source"),
-                "filename": chunk.get("filename") or chunk.get("metadata", {}).get("filename"),
-                "doc_type": chunk.get("doc_type") or chunk.get("metadata", {}).get("doc_type"),
-                "chunk_index": chunk.get("chunk_index") if chunk.get("chunk_index") is not None else chunk.get("metadata", {}).get("chunk_index"),
-                "global_chunk_id": chunk.get("global_chunk_id") if chunk.get("global_chunk_id") is not None else chunk.get("metadata", {}).get("global_chunk_id")
-            })
-        results.sort(key = lambda x: x["score"], reverse=True)
-        return [result for result in results if result["score"] > 0][:limit]
 
-def keyword_search(query: str, limit: int = 5) -> List[Dict[str, Any]]:
+def keyword_search(query: str, client: OpenSearch = None, limit: int = 5) -> List[Dict[str, Any]]:
     """
-    One shot bm25 keyword search
+    BM25 keyword search using OpenSearch's built-in text matching
     """
-    chunks = load_chunks()
-    searcher = BM25KeywordSearcher(chunks)
-    return searcher.search(query, limit=limit)
+    query = query.strip()
+    if not query:
+        raise ValueError("Query cannot be empty")
+
+    if client is None:
+        client = get_opensearch_client()
+
+    query_body = {
+        "size": limit,
+        "query": {
+            "match": {
+                "text": {
+                    "query": query,
+                    "operator": "or"
+                }
+            }
+        }
+    }
+
+    response = client.search(index=INDEX_NAME, body=query_body)
+
+    results = []
+    for hit in response["hits"]["hits"]:
+        source = hit["_source"]
+        results.append({
+            "id": hit["_id"],
+            "score": hit["_score"],
+            "text": source.get("text"),
+            "source": source.get("source"),
+            "filename": source.get("filename"),
+            "doc_type": source.get("doc_type"),
+            "chunk_index": source.get("chunk_index"),
+            "global_chunk_id": source.get("global_chunk_id")
+        })
+
+    return results
+
 
 if __name__ == "__main__":
+    client = get_opensearch_client()
     query = "payment timeout after deploy"
-    results = keyword_search(query, limit=5)
+    results = keyword_search(query, client=client, limit=5)
+
     print(f"Query: {query}")
-    print(f"Found {len(results)} results \n")
+    print(f"Found {len(results)} results\n")
 
     for i, result in enumerate(results, start=1):
         print(f"Result: {i}")
@@ -83,5 +88,5 @@ if __name__ == "__main__":
         print(f"File:  {result['filename']}")
         print(f"Type: {result['doc_type']}")
         print(f"Chunk id: {result['global_chunk_id']}")
-        print(f"text: {result['text']}")
-        print("-"*60)
+        print(f"Text: {result['text']}")
+        print("-" * 60)
