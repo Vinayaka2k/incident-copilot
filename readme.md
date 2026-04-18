@@ -359,17 +359,17 @@ IncidentCopilot turns it into **actionable guidance** using AI + hybrid retrieva
 
 ---
 
-# How to Add Guardrails to the Incident Copilot System Using Bedrock
+# Next Steps:
 
-## Why Guardrails Are Critical for This System
+## Adding Guardrails to IncidentCopilot
 
-In an incident copilot system using RAG, the model consumes retrieved logs, runbooks, and incident data that may be **untrusted or poisoned**. This can lead to:
+In incident copilot, the model consumes retrieved logs, runbooks, and incident data that may be **untrusted or poisoned**. This can lead to:
 
 - Prompt injection via retrieved content  
 - Hallucinated or irrelevant conclusions  
 - Suggestions of **dangerous production actions** (e.g., delete, restart, wipe systems)  
 
-Since this system recommends **next steps during live incident triage**, unsafe outputs can cause **real operational damage**.
+Since incident copilot recommends **next steps during live incident triage**, unsafe outputs can cause **real operational damage**.
 
 Guardrails ensure the model:
 - Ignores malicious input  
