@@ -46,6 +46,7 @@ def embed_query(query: str, bedrock_client) -> List[float]:
     )
     response_body = json.loads(response["body"].read())
     return response_body["embedding"]
+
 def dense_search(client: OpenSearch, collection_name: str, query_vector: List[float], limit: int = 5) -> List[Dict]:
     query_body = {
         "size": limit,
