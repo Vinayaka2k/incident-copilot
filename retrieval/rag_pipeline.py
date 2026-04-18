@@ -1,15 +1,13 @@
 from typing import List, Dict, Any
-from google import genai
+import boto3
 from rerank_search import hybrid_search_with_rerank
+import sys
+sys.stdout.reconfigure(encoding='utf-8')
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "anthropic.claude-sonnet-4-20250514-v1:0"
 
 def get_client():
-    """
-    Initialize Gemini client.
-    Assumes GEMINI_API_KEY has been set
-    """
-    return genai.Client()
+    return boto3.client("bedrock-runtime", region_name="us-east-1")
 
 def build_context(results: List[Dict[str, Any]]) -> str:
     """
@@ -41,15 +39,21 @@ def build_prompt(query: str, context: str) -> str:
 """
 
 def generate_answer(query: str, context: str, client) -> str:
-    """
-    Call gemini model
-    """
     prompt = build_prompt(query, context)
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt
+    response = client.converse(
+        modelId=MODEL_NAME,
+        messages=[
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "text": prompt
+                    }
+                ]
+            }
+        ]
     )
-    return response.text.strip()
+    return response["output"]["message"]["content"][0]["text"].strip()
 
 def rag_pipeline(query: str, final_k: int = 5) -> Dict[str, Any]:
     """

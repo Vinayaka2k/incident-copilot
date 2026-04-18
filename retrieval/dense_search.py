@@ -1,10 +1,11 @@
 from pathlib import Path
 from typing import List, Dict
 from qdrant_client import QdrantClient
-from sentence_transformers import SentenceTransformer
+import boto3
+import json
 
 COLLECTION_NAME = "incident_copilot"
-EMBEDDING_MODEL_NAME = "BAAI/bge-small-en-v1.5"
+EMBEDDING_MODEL_NAME = "amazon.titan-embed-text-v2:0"
 
 def get_qdrant_client() -> QdrantClient:
     """
@@ -12,23 +13,23 @@ def get_qdrant_client() -> QdrantClient:
     """
     return QdrantClient(host="localhost", port=6333)
 
-def get_embedding_model() -> SentenceTransformer:
-    """
-    Load and return the embedding model
-    """
-    return SentenceTransformer(EMBEDDING_MODEL_NAME)
+def get_bedrock_client():
+    return boto3.client("bedrock-runtime", region_name="us-east-1")
 
-def embed_query(query: str, model: SentenceTransformer) -> List[float]:
-    """
-    Convert a user query into a dense embedding vector
-    """
-    query_text = f"query: {query.strip()}"
-    embedding = model.encode(
-        query_text,
-        convert_to_numpy=True,
-        normalize_embeddings=True
+def embed_query(query: str, bedrock_client) -> List[float]:
+    payload = {
+        "inputText": query.strip(),
+        "dimensions": 1024,
+        "normalize": True
+    }
+    response = bedrock_client.invoke_model( 
+        modelId=EMBEDDING_MODEL_NAME,
+        contentType="application/json",
+        accept="application/json",
+        body=json.dumps(payload)
     )
-    return embedding.tolist()
+    response_body = json.loads(response["body"].read())
+    return response_body["embedding"]
 
 def dense_search(client: QdrantClient, collection_name: str, query_vector: List[float], limit: int = 5) -> List[Dict]:
     """
@@ -55,10 +56,10 @@ def dense_search(client: QdrantClient, collection_name: str, query_vector: List[
     return formatted_results
 
 if __name__ == "__main__":
-    model = get_embedding_model()
+    bedrock_client = get_bedrock_client()
     client = get_qdrant_client()
     query = "payment timeout after deploy"
-    query_vector = embed_query(query, model)
+    query_vector = embed_query(query, bedrock_client)
     results = dense_search(client, COLLECTION_NAME, query_vector, limit=5)
     print(f"Query: {query}")
     print(f"Found {len(results)} results\n")

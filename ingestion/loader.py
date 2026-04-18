@@ -36,19 +36,6 @@ def load_markdown_files(base_path: str):
 if __name__ == "__main__":
     docs = load_markdown_files("incident-copilot/data")
     print(f"Loaded {len(docs)} documents")
-    for d in docs[7:]:
+    for d in docs[:1]:
         print("\n--")
-        print(d["metadata"])
-
-
-
-
-
-
-
-
-
-
-
-
-
+        print(d)

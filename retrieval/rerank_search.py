@@ -1,44 +1,61 @@
 from typing import List, Dict, Any
-from sentence_transformers import CrossEncoder
-from retrieval.hybrid_search import hybrid_search
-RERANK_MODEL_NAME = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+from hybrid_search import hybrid_search
+RERANK_MODEL_NAME = "arn:aws:bedrock:us-east-1::foundation-model/cohere.rerank-v3-5:0"
+import boto3
 
-def get_reranker() -> CrossEncoder:
-    """
-    Load and return a cross encoder rereanker model
-    """
-    return CrossEncoder(RERANK_MODEL_NAME)
+def get_reranker():
+    return boto3.client("bedrock-agent-runtime", region_name="us-east-1")
 
-def rerank_results(query: str, candidates: List[Dict[str, Any]],
-                   reranker: CrossEncoder) -> List[Dict[str, Any]]:
+def rerank_results(query: str, candidates: List[Dict[str,Any]], reranker) -> List[Dict[str,Any]]:
     """
-    Rerank canddiate results using a cross encoder
-    Each candidiate is scored using a pair (query, candidate_text)
-    Higher score means more relevant
+    Rerank candaites using amanzn bedrock rerank API
     """
     if not query or not query.strip():
         raise ValueError("Query cant be empty")
     if not candidates:
         return []
-    pairs = []
     valid_candidates = []
+    sources = []
     for candidate in candidates:
         text = candidate.get("text")
         if text and text.strip():
-            pairs.append((query.strip(), text.strip()))
             valid_candidates.append(candidate)
-
-    if not pairs:
+            sources.append({
+                "type": "INLINE",
+                "inlineDocumentSource": {
+                    "type": "TEXT",
+                    "textDocument": {
+                        "text": text.strip()
+                    }
+                }
+            })
+    if not sources:
         return []
-    
-    scores = reranker.predict(pairs)
+    response = reranker.rerank(
+        queries=[
+            {
+                "type": "TEXT", "textQuery": {
+                    "text": query.strip()
+                }
+            }
+        ],
+        sources=sources,
+        rerankingConfiguration={
+            "type": "BEDROCK_RERANKING_MODEL",
+            "bedrockRerankingConfiguration" : {
+                "modelConfiguration": {
+                    "modelArn": RERANK_MODEL_NAME
+                }, "numberOfResults": len(valid_candidates)
+            }
+        }
+    )
     reranked_results = []
-    for candidate, score in zip(valid_candidates, scores):
-        result = dict(candidate)
-        result["rerank_score"] = float(score)
-        reranked_results.append(result)
-
-    reranked_results.sort(key = lambda x:x["rerank_score"], reverse=True)
+    for result in response["results"]:
+        idx=result["index"]
+        candidate=dict(valid_candidates[idx])
+        candidate["rerank_score"]=float(result["relevanceScore"])
+        reranked_results.append(candidate)
+    reranked_results.sort(key=lambda x:x["rerank_score"], reverse=True)
     return reranked_results
 
 def hybrid_search_with_rerank(query: str, dense_limit: int = 10, keyword_limit: int = 10,

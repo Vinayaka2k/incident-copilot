@@ -1,7 +1,7 @@
 from typing import List, Dict, Any, Tuple
 from dense_search import (
     get_qdrant_client,
-    get_embedding_model,
+    get_bedrock_client,
     embed_query,
     dense_search,
     COLLECTION_NAME
@@ -49,7 +49,7 @@ def hybrid_search(query: str, dense_limit: int = 10, keyword_limit: int = 10,
     query = query.strip()
     if not query:
         raise ValueError("Query cannot be empty")
-    model = get_embedding_model()
+    model = get_bedrock_client()
     client = get_qdrant_client()
     query_vector = embed_query(query, model)
     dense_results = dense_search(

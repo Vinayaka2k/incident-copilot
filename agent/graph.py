@@ -1,35 +1,40 @@
-from langgraph.graph import START, END, StateGraph
+from langgraph.graph import StateGraph, END, START
 from agent.nodes import (
-    IncidentState, analyze_incident_node,
-    rewrite_query_node, incident_search_node, triage_planning_node
+    IncidentState,
+    analyze_incident_node,
+    react_agent_node,
+    tool_node,
+    final_node
 )
 
+def should_continue(state: IncidentState):
+    action = state.get("action")
+    if action == "final":
+        return "final"
+    return "tool"
+
+
 def build_graph():
-    """
-    Build and compile the IncidentCopilot LangGraph
-    FLow:
-    Start -> analyze_incident -> rewrite_query ->   incident_search -> triage_planning -> END
-    """
     graph = StateGraph(IncidentState)
-    graph.add_node("analyze_incident", analyze_incident_node)
-    graph.add_node("rewrite_query", rewrite_query_node)
-    graph.add_node("incident_search", incident_search_node)
-    graph.add_node("triage_planning", triage_planning_node)
+    graph.add_node("analyze", analyze_incident_node)
+    graph.add_node("agent", react_agent_node)
+    graph.add_node("tool", tool_node)
+    graph.add_node("final", final_node)
 
-    # Add linear edges
-    graph.add_edge(START, "analyze_incident")
-    graph.add_edge("analyze_incident", "rewrite_query")
-    graph.add_edge("rewrite_query", "incident_search")
-    graph.add_edge("incident_search", "triage_planning")
-    graph.add_edge("triage_planning", END)
-    
-    # Compile graph
+    graph.add_edge(START, "analyze")
+    graph.add_edge("analyze", "agent")
+    graph.add_conditional_edges(
+        "agent",
+        should_continue,
+        {
+            "tool": "tool",
+            "final": "final"
+        }
+    )
+    graph.add_edge("tool", "agent")
+    graph.add_edge("final", END)
     return graph.compile()
-
 incident_graph = build_graph()
-
-
-
 
 
 

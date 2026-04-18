@@ -1,7 +1,13 @@
 import json
 from pathlib import Path
 from typing import List, Dict
-from sentence_transformers import SentenceTransformer
+import boto3
+from tqdm import tqdm
+EMBEDDING_MODEL_NAME = "amazon.titan-embed-text-v2:0"
+EMBEDDING_DIM=1024
+
+def get_bedrock_client():
+    return boto3.client("bedrock-runtime", region_name="us-east-1")
 
 def load_chunks(chunks_path: Path) -> List[Dict]:
     """
@@ -10,20 +16,30 @@ def load_chunks(chunks_path: Path) -> List[Dict]:
     with open(chunks_path, "r", encoding="utf-8") as f:
         return json.load(f)
     
-def embed_texts(texts: List[str], model: SentenceTransformer, batch_size: int = 32) -> List[List[float]]:
+def embed_texts(texts: List[str], bedrock_client) -> List[List[float]]:
     """
-    Generate embeddings for a list of text
+    Genreate embeddings for a list of texts using amzn titan embed v2 
+    titan processes one text at a time no native batching
     """
     if not texts:
         return []
-    embeddings = model.encode(
-        texts,
-        batch_size=batch_size,
-        show_progress_bar=True,
-        convert_to_numpy=True,
-        normalize_embeddings=True
-    )
-    return embeddings.tolist()
+    embeddings = []
+    for text in tqdm(texts, desc="Embedding chunks"):
+        payload = {
+            "inputText": text.strip(),
+            "dimensions": EMBEDDING_DIM,
+            "normalize": True,
+            # "embedding_types": ["float"]
+        }
+        response = bedrock_client.invoke_model(
+            modelId=EMBEDDING_MODEL_NAME,
+            contentType="application/json",
+            accept="application/json",
+            body=json.dumps(payload)
+        )
+        response_body = json.loads(response["body"].read())
+        embeddings.append(response_body["embeddingsByType"]["float"])
+    return embeddings
 
 def attach_embeddings(chunks: List[Dict], embeddings: List[List[float]]) -> List[Dict]:
     """
@@ -55,10 +71,10 @@ if __name__ == "__main__":
     output_path = processed_dir / "embedded_chunks.json"
 
     chunks = load_chunks(chunks_path)
-    model = SentenceTransformer("BAAI/bge-small-en-v1.5")
+    bedrock_client = get_bedrock_client()
     texts = [chunk["text"] for chunk in chunks]
 
-    embeddings = embed_texts(texts, model=model, batch_size=32)
+    embeddings = embed_texts(texts, bedrock_client=bedrock_client)
     embedded_chunks = attach_embeddings(chunks, embeddings)
 
     save_embedded_chunks(output_path, embedded_chunks)
