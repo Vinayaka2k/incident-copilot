@@ -9,17 +9,20 @@ from agent.nodes import (
 
 def should_continue(state: IncidentState):
     action = state.get("action")
-    if action == "final":
-        return "final"
-    return "tool"
 
+    if action == "finish":
+        return "finish"
+    elif action == "search":
+        return "search"
+    else:
+        raise ValueError(f"Unknown action: {action}")
 
 def build_graph():
     graph = StateGraph(IncidentState)
     graph.add_node("analyze", analyze_incident_node)
     graph.add_node("agent", react_agent_node)
-    graph.add_node("tool", tool_node)
-    graph.add_node("final", final_node)
+    graph.add_node("search", tool_node)
+    graph.add_node("finish", final_node)
 
     graph.add_edge(START, "analyze")
     graph.add_edge("analyze", "agent")
@@ -27,26 +30,11 @@ def build_graph():
         "agent",
         should_continue,
         {
-            "tool": "tool",
-            "final": "final"
+            "search": "search",
+            "finish": "finish"
         }
     )
-    graph.add_edge("tool", "agent")
-    graph.add_edge("final", END)
+    graph.add_edge("search", "agent")
+    graph.add_edge("finish", END)
     return graph.compile()
 incident_graph = build_graph()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

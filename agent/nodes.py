@@ -60,8 +60,44 @@ def react_agent_node(state: IncidentState) -> Dict[str, Any]:
     observation = state.get("observation", "")
     iterations = state.get("iterations", 0)
     if iterations > 3:
+        incident = state["incident"]
+        observation = state.get("observation", "")
+        docs = state.get("retrieved_docs", [])
+
+        context = "\n\n".join(
+            [doc.get("text", "") for doc in docs]
+        )
+
+        prompt = f"""
+        You must now produce the FINAL triage answer.
+
+        Do NOT search again.
+        Use the available information to give your best possible answer.
+
+        Return JSON:
+        {{
+            "incident_type": "",
+            "hypothesis": [],
+            "next_steps": [],
+            "evidence": []
+        }}
+
+        Incident:
+        {incident}
+
+        Previous observation:
+        {observation}
+
+        Context:
+        {context}
+        """
+
+        output = _generate(prompt)
+        parsed = _extract_json(output)
+
         return {
-            "action": "finish"
+            "action": "finish",
+            "final_answer": parsed
         }
     prompt = f"""
     You are an incident triage agent using ReAct.
@@ -131,30 +167,3 @@ def final_node(state: IncidentState) -> Dict[str, Any]:
     return {
         "final_answer": parsed
     }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
