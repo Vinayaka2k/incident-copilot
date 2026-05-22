@@ -1,10 +1,10 @@
 # IncidentCopilot
 
-**AI-powered incident triage agent built entirely on AWS Bedrock and OpenSearch — helps engineers debug production incidents using runbooks, postmortems, and hybrid retrieval.**
+**AI-powered incident triage agent built entirely on AWS Bedrock and OpenSearch — automatically analyzes PagerDuty incidents using runbooks, postmortems, and hybrid retrieval.**
 
-Production incidents are stressful and time-critical. Engineers often waste valuable minutes searching through runbooks, past incident reports, Slack threads, and documentation to determine the next debugging step.
+Production incidents are stressful and time-critical. Engineers often waste valuable minutes searching through runbooks, past incident reports, PagerDuty alerts, Slack threads, and documentation to determine the next debugging step.
 
-**IncidentCopilot** is an agentic system that automatically analyzes incident descriptions, retrieves relevant operational knowledge, and generates a structured triage plan grounded in real runbooks and past incidents.
+**IncidentCopilot** is an agentic system that automatically consumes incident alerts from PagerDuty webhooks, retrieves relevant operational knowledge, and generates a structured triage plan grounded in real runbooks and past incidents.
 
 The goal is simple: **reduce time-to-context during incidents.**
 
@@ -12,11 +12,11 @@ The goal is simple: **reduce time-to-context during incidents.**
 
 ## Demo Example
 
-### Input
+### PagerDuty Incident Payload
 
     TimeoutError: upstream payment service deadline exceeded
 
-### Output
+### IncidentCopilot Output
 
 **Probable Incident Category**  
 Payment dependency timeout.
@@ -44,6 +44,25 @@ Payment dependency timeout.
 ---
 
 ## Key Features
+
+### PagerDuty Webhook Integration
+
+IncidentCopilot integrates directly with PagerDuty webhooks for real-time incident ingestion.
+
+- Receives live incident alerts via webhook events  
+- Automatically extracts incident titles and descriptions  
+- Triggers AI triage workflows on new incidents  
+- Supports structured incident payload processing  
+- Enables real-time operational debugging assistance  
+
+**Example flow:**
+
+    Datadog Alert
+    → PagerDuty Incident
+    → IncidentCopilot Webhook
+    → AI Triage Generation
+
+---
 
 ### Hybrid Retrieval (Dense + Keyword via OpenSearch)
 
@@ -82,10 +101,11 @@ Indexes operational documents such as:
 
 ### Agentic Triage Workflow
 
-1. Analyze the incident description  
-2. Rewrite the query  
-3. Retrieve relevant knowledge (hybrid + rerank)  
-4. Generate a structured triage plan  
+1. Receive PagerDuty incident webhook  
+2. Analyze the incident description  
+3. Rewrite the query  
+4. Retrieve relevant knowledge (hybrid + rerank)  
+5. Generate a structured triage plan  
 
 ---
 
@@ -99,16 +119,17 @@ Every recommendation is backed by **runbook sections or past incidents**, reduci
 
 **Flow (linearized for GitHub compatibility):**
 
-1. Incident Description  
-2. → Query Analysis (Claude via Bedrock)  
-3. → Query Rewrite Tool  
-4. → Incident Search Tool  
+1. Monitoring Alert / PagerDuty Incident  
+2. → PagerDuty Webhook Endpoint (FastAPI)  
+3. → Query Analysis (Claude via Bedrock)  
+4. → Query Rewrite Tool  
+5. → Incident Search Tool  
    - Dense Search (Titan Embed v2 → OpenSearch KNN)  
    - Keyword Search (OpenSearch BM25)  
    - Hybrid Fusion (RRF)  
    - Reranking (Amazon Rerank v1)  
-5. → Triage Planning Tool (Claude via Bedrock)  
-6. → Structured Incident Response  
+6. → Triage Planning Tool (Claude via Bedrock)  
+7. → Structured Incident Response  
 
 ---
 
@@ -131,6 +152,7 @@ All AI capabilities are powered by **Amazon Bedrock** — no self-hosted models,
 | Hybrid Fusion       | Reciprocal Rank Fusion                          |
 | Agent Framework     | LangGraph                                       |
 | API Layer           | FastAPI                                         |
+| Incident Ingestion  | PagerDuty Webhooks                              |
 | Cloud Platform      | AWS                                             |
 
 ---
@@ -193,6 +215,7 @@ Each document is:
 - AWS account with Bedrock access  
 - AWS credentials configured  
 - OpenSearch Serverless collection  
+- PagerDuty account with webhook integration  
 - Python 3.10+  
 
 ---
@@ -226,13 +249,25 @@ Enable:
 
 ---
 
-### 4. Install Dependencies
+### 4. Configure PagerDuty Webhook
+
+- Create a PagerDuty service integration  
+- Configure webhook endpoint:
+
+      POST /webhooks/pagerduty
+
+- Point webhook URL to IncidentCopilot API
+- Enable incident trigger events
+
+---
+
+### 5. Install Dependencies
 
     pip install -r requirements.txt
 
 ---
 
-### 5. Ingest Documents
+### 6. Ingest Documents
 
     python ingestion/loader.py
     python ingestion/chunker.py
@@ -241,7 +276,7 @@ Enable:
 
 ---
 
-### 6. Test Retrieval
+### 7. Test Retrieval
 
     python retrieval/dense_search.py
     python retrieval/keyword_search.py
@@ -249,7 +284,7 @@ Enable:
 
 ---
 
-### 7. Start API
+### 8. Start API
 
     uvicorn api.main:app --reload
 
@@ -257,18 +292,23 @@ Enable:
 
 ### API Example
 
-**POST /triage**
+**POST /webhooks/pagerduty**
 
-**Request**
+**Sample PagerDuty Payload**
 
 ```json
 {
-  "incident": "CrashLoopBackOff payment worker after deploy"
+  "event": {
+    "data": {
+      "title": "CrashLoopBackOff payment worker after deploy"
+    }
+  }
 }
 ```
 
-
 **Response**
+
+```json
 {
   "incident_type": "container crash loop",
   "hypotheses": [
@@ -287,6 +327,9 @@ Enable:
     "Incident: INC-1342_worker_crashloop"
   ]
 }
+```
+
+---
 
 ## How Retrieval Works
 
@@ -328,7 +371,7 @@ IncidentCopilot turns it into **actionable guidance** using AI + hybrid retrieva
 ## Future Improvements
 
 - Observability integration  
-- Slack / PagerDuty integration  
+- Slack collaboration integration  
 - Auto classification  
 - Feedback loop  
 - Guardrails  
@@ -459,6 +502,5 @@ Even after generation, the model may:
 They validate the **final response before delivery**, ensuring:
 - No harmful suggestions reach engineers  
 - Responses are grounded in retrieved evidence  
-- Sensitive data is blocked or masked  
+- Sensitive data is blocked or masked
 
----
