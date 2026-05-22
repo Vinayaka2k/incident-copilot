@@ -1,6 +1,7 @@
 # IncidentCopilot
 
-**AI-powered incident triage agent built entirely on AWS Bedrock and OpenSearch — automatically analyzes PagerDuty incidents using runbooks, postmortems, and hybrid retrieval.**
+TLDR: **IncidentCopilot** is an **AI incident triage assistant** that automatically analyzes **PagerDuty alerts** and turns them into clear debugging steps using your **runbooks and past incidents.** It uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
+**The goal is simple:** help engineers understand and resolve production issues faster and **reduce MTTR** during critical incidents.
 
 Production incidents are stressful and time-critical. Engineers often waste valuable minutes searching through runbooks, past incident reports, PagerDuty alerts, Slack threads, and documentation to determine the next debugging step.
 
