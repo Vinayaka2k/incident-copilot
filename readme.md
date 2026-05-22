@@ -1,8 +1,11 @@
 # IncidentCopilot
 
 **Problem:** Production incidents are time-critical. Engineers often waste valuable time searching through runbooks, past incident reports, PagerDuty alerts, Slack threads to determine the next debugging step.
+
 **Enter IncidentCopilot ->** is an **AI incident triage assistant** that helps engineers to resolve production issues faster by **reducing the MTTR by half.**
+
 **Architecture:** Uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
+
 **How Does It Work?** It analyzes **PagerDuty alerts** and turns them into clear debugging steps using your **runbooks and past incidents.** 
 
 ---
