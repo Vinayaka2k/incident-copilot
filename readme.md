@@ -1,13 +1,9 @@
 # IncidentCopilot
 
-TLDR: **IncidentCopilot** is an **AI incident triage assistant** that automatically analyzes **PagerDuty alerts** and turns them into clear debugging steps using your **runbooks and past incidents.** It uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
-**The goal is simple:** help engineers understand and resolve production issues faster and **reduce MTTR** during critical incidents.
-
-Production incidents are stressful and time-critical. Engineers often waste valuable minutes searching through runbooks, past incident reports, PagerDuty alerts, Slack threads, and documentation to determine the next debugging step.
-
-**IncidentCopilot** is an agentic system that automatically consumes incident alerts from PagerDuty webhooks, retrieves relevant operational knowledge, and generates a structured triage plan grounded in real runbooks and past incidents.
-
-The goal is simple: **reduce time-to-context during incidents.**
+**Problem:** Production incidents are time-critical. Engineers often waste valuable time searching through runbooks, past incident reports, PagerDuty alerts, Slack threads to determine the next debugging step.
+**Enter IncidentCopilot ->** is an **AI incident triage assistant** that helps engineers to resolve production issues faster by **reducing the MTTR by half.**
+**Architecture:** Uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
+**How Does It Work?** It analyzes **PagerDuty alerts** and turns them into clear debugging steps using your **runbooks and past incidents.** 
 
 ---
 
