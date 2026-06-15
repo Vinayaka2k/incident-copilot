@@ -504,3 +504,9 @@ They validate the **final response before delivery**, ensuring:
 - Responses are grounded in retrieved evidence  
 - Sensitive data is blocked or masked
 
+---
+
+## 5. AWS Bedrock Guardrails
+
+In this project, we leverage AWS Bedrock Guardrails to establish a robust and secure operational boundary around our triage assistant. Specifically, we implement content filters to intercept prompt injection and jailbreak attempts targeting the retrieved logs and runbooks, and word/denied-topic filters to prevent the model from suggesting dangerous production actions such as deleting or rewriting critical system states. Furthermore, we configure Bedrock's native Converse API tool-calling constraints to enforce structured JSON output alongside contextual grounding checks that validate all final suggestions against our ingested knowledge base, ensuring every recommendation is both safe to execute and fully backed by verified evidence.
+
