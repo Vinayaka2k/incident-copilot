@@ -1,4 +1,4 @@
-# IncidentCopilot
+# Signalsly (renamed from IncidentCopilot)
 
 **Problem:** Production incidents are time-critical. Engineers often waste valuable time searching through runbooks, past incident reports, PagerDuty alerts, Slack threads to determine the next debugging step.
 
