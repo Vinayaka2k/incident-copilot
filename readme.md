@@ -1,8 +1,8 @@
-# Signalsly (renamed from IncidentCopilot)
+# Signalsly (renamed from Signalsly)
 
 **Problem:** Production incidents are time-critical. Engineers often waste valuable time searching through runbooks, past incident reports, PagerDuty alerts, Slack threads to determine the next debugging step.
 
-**Enter IncidentCopilot ->** is an **AI incident triage assistant** that helps engineers to resolve production issues faster by **reducing the MTTR by half.**
+**Enter Signalsly ->** is an **AI incident triage assistant** that helps engineers to resolve production issues faster by **reducing the MTTR by half.**
 
 **Architecture:** Uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
 
@@ -16,7 +16,7 @@
 
     TimeoutError: upstream payment service deadline exceeded
 
-### IncidentCopilot Output
+### Signalsly Output
 
 **Probable Incident Category**  
 Payment dependency timeout.
@@ -47,7 +47,7 @@ Payment dependency timeout.
 
 ### PagerDuty Webhook Integration
 
-IncidentCopilot integrates directly with PagerDuty webhooks for real-time incident ingestion.
+Signalsly integrates directly with PagerDuty webhooks for real-time incident ingestion.
 
 - Receives live incident alerts via webhook events  
 - Automatically extracts incident titles and descriptions  
@@ -59,7 +59,7 @@ IncidentCopilot integrates directly with PagerDuty webhooks for real-time incide
 
     Datadog Alert
     → PagerDuty Incident
-    → IncidentCopilot Webhook
+    → Signalsly Webhook
     → AI Triage Generation
 
 ---
@@ -256,7 +256,7 @@ Enable:
 
       POST /webhooks/pagerduty
 
-- Point webhook URL to IncidentCopilot API
+- Point webhook URL to Signalsly API
 - Enable incident trigger events
 
 ---
@@ -364,7 +364,7 @@ Enable:
 
 Operational knowledge exists but is hard to use during incidents.
 
-IncidentCopilot turns it into **actionable guidance** using AI + hybrid retrieval.
+Signalsly turns it into **actionable guidance** using AI + hybrid retrieval.
 
 ---
 
@@ -404,7 +404,7 @@ IncidentCopilot turns it into **actionable guidance** using AI + hybrid retrieva
 
 # Next Steps:
 
-## Adding Guardrails to IncidentCopilot
+## Adding Guardrails to Signalsly
 
 In incident copilot, the model consumes retrieved logs, runbooks, and incident data that may be **untrusted or poisoned**. This can lead to:
 
