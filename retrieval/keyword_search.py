@@ -4,8 +4,8 @@ from typing import List, Dict, Any
 from opensearchpy import OpenSearch, RequestsHttpConnection
 from requests_aws4auth import AWS4Auth
 
-INDEX_NAME = "incident_copilot-new"
-OPENSEARCH_ENDPOINT = "https://dww2xv3ocmzsmn17zb66.us-east-1.aoss.amazonaws.com"
+INDEX_NAME = "incident-copilot"
+OPENSEARCH_ENDPOINT = "https://rysvo0ywefnum5uziln3.us-east-1.aoss.amazonaws.com"
 REGION = "us-east-1"
 
 

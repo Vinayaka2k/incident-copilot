@@ -5,9 +5,9 @@ from opensearchpy import OpenSearch, RequestsHttpConnection, helpers
 from requests_aws4auth import AWS4Auth
 import boto3
 
-INDEX_NAME = "incident_copilot-new"
+INDEX_NAME = "incident-copilot"
 REGION = "us-east-1"
-OPENSEARCH_ENDPOINT = "https://dww2xv3ocmzsmn17zb66.us-east-1.aoss.amazonaws.com"
+OPENSEARCH_ENDPOINT = "https://rysvo0ywefnum5uziln3.us-east-1.aoss.amazonaws.com"
 
 
 def load_embedded_chunks(file_path: Path) -> List[Dict]:

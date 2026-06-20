@@ -8,7 +8,7 @@ def get_reranker():
 
 def rerank_results(query: str, candidates: List[Dict[str,Any]], reranker) -> List[Dict[str,Any]]:
     """
-    Rerank candaites using amanzn bedrock rerank API
+    Rerank candidates using amazon bedrock rerank API
     """
     if not query or not query.strip():
         raise ValueError("Query cant be empty")
@@ -61,23 +61,35 @@ def rerank_results(query: str, candidates: List[Dict[str,Any]], reranker) -> Lis
 def hybrid_search_with_rerank(query: str, dense_limit: int = 10, keyword_limit: int = 10,
                               hybrid_limit: int = 10, final_limit: int = 5) -> List[Dict[str, Any]]:
     """
-    Run hybrid retrieval first, then rerank retreieved candidaites.
-    Stage 1: hybrid retrieval for reacll
-    Stage 2: cross encoder reranking for prevision
+    Run hybrid retrieval first, then rerank retrieved candidates.
+    Stage 1: hybrid retrieval for recall
+    Stage 2: cross encoder reranking for precision
     """
     query = query.strip()
     if not query:
-        raise ValueError("Query cannot be rmpty")
+        raise ValueError("Query cannot be empty")
+    
+    # Get hybrid search results
     candidates = hybrid_search(query=query, dense_limit=dense_limit,
                                keyword_limit=keyword_limit, final_limit=final_limit, rrf_k=60)
-    reranker = get_reranker()
-    reranked = rerank_results(query, candidates, reranker)
-    return reranked[:final_limit]
+    
+    try:
+        reranker = get_reranker()
+        reranked = rerank_results(query, candidates, reranker)
+        return reranked[:final_limit]
+    except Exception as e:
+        # Fallback gracefully if Cohere Rerank access is restricted or disabled on AWS
+        print(f"\n[WARNING] Bedrock Rerank failed: {e}. Falling back to standard hybrid search results.")
+        # Fill in a mock rerank score for compatibility
+        for c in candidates:
+            if "rerank_score" not in c:
+                c["rerank_score"] = c.get("hybrid_score", 1.0)
+        return candidates[:final_limit]
 
 if __name__ == "__main__":
     query = "payment timeout after deploy"
     results = hybrid_search_with_rerank(query=query, dense_limit=10, keyword_limit=10, hybrid_limit=10, final_limit=5)
-    print(f"QUery: {query}")
+    print(f"Query: {query}")
     print(f"Found {len(results)} reranked results\n")
     for i, result in enumerate(results, start=1):
         print(f"Result: {i}")
@@ -89,14 +101,3 @@ if __name__ == "__main__":
         print(f"Chunk id: {result.get('global_chunk_id')}")
         print(f"Text: {result.get('text')}")
         print("-"*70)
-
-
-
-
-
-
-
-
-
-
-
