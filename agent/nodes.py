@@ -35,8 +35,17 @@ from google.genai.errors import APIError
 
 def is_rate_limit_or_server_error(exception: Exception) -> bool:
     if isinstance(exception, APIError):
-        # Retry on status 429 (Rate Limits) or 5xx (Server Errors)
-        return exception.status_code == 429 or exception.status_code >= 500
+        # Obtain status/code dynamically or check string
+        code = getattr(exception, 'code', None) or (exception._get_code() if hasattr(exception, '_get_code') else None)
+        if code is not None:
+            try:
+                code_val = int(code)
+                return code_val == 429 or code_val >= 500
+            except ValueError:
+                pass
+        # Safe fallback: check exception string content
+        err_str = str(exception).lower()
+        return "429" in err_str or "resource_exhausted" in err_str or "quota" in err_str or "500" in err_str or "503" in err_str
     return False
 
 @retry(
@@ -145,14 +154,21 @@ def tool_node(state: IncidentState) -> Dict[str, Any]:
     action = state.get("action")
     if action == "search":
         query = state.get("action_input", "")
-        results = hybrid_search_with_rerank(
-            query=query,
-            final_limit=5
-        )
-        return {
-            "retrieved_docs": results,
-            "observation": json.dumps(results)[:1000]
-        }
+        try:
+            results = hybrid_search_with_rerank(
+                query=query,
+                final_limit=5
+            )
+            return {
+                "retrieved_docs": results,
+                "observation": json.dumps(results)[:1000]
+            }
+        except Exception as e:
+            print(f"[WARNING] Safe fallback triggered: OpenSearch retrieval failed. Error: {e}")
+            return {
+                "retrieved_docs": [],
+                "observation": f"Error: Search service is currently unavailable ({str(e)}). Please rely on your pre-trained system triage knowledge instead."
+            }
     return {}
 
 # Final Answer node
