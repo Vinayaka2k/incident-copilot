@@ -30,6 +30,21 @@ def get_client() -> genai.Client:
     _genai_client = genai.Client(api_key=api_key)
     return _genai_client
 
+from tenacity import retry, wait_exponential, stop_after_attempt, retry_if_exception
+from google.genai.errors import APIError
+
+def is_rate_limit_or_server_error(exception: Exception) -> bool:
+    if isinstance(exception, APIError):
+        # Retry on status 429 (Rate Limits) or 5xx (Server Errors)
+        return exception.status_code == 429 or exception.status_code >= 500
+    return False
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=2, max=10),
+    stop=stop_after_attempt(5),
+    retry=retry_if_exception(is_rate_limit_or_server_error),
+    reraise=True
+)
 def _generate(prompt: str) -> str:
     client = get_client()
     response = client.models.generate_content(
