@@ -1,512 +1,100 @@
-# Signalsly (renamed from IncidentCopilot)
+# Signalsly (IncidentCopilot)
 
-**Problem:** Production incidents are time-critical. Engineers often waste valuable time searching through runbooks, past incident reports, PagerDuty alerts, Slack threads to determine the next debugging step.
-
-**Enter Signalsly ->** is an **AI incident triage assistant** that helps engineers to resolve production issues faster by **reducing the MTTR by half.**
-
-**Architecture:** Uses **AWS Bedrock models** and hybrid search (with reranking) to find relevant context and **generate grounded hypotheses** and next actions in seconds. 
-
-**How Does It Work?** It analyzes **PagerDuty alerts** and turns them into clear debugging steps using your **runbooks and past incidents.** 
+Signalsly is an **AI-powered incident triage assistant** designed to halve Mean Time to Resolution (MTTR). By integrating directly with monitoring alerts and PagerDuty webhooks, it instantly retrieves relevant runbooks and past incidents to generate grounded, actionable debugging plans for engineers.
 
 ---
 
-## Demo Example
+## 🚀 Key Features
 
-### PagerDuty Incident Payload
-
-    TimeoutError: upstream payment service deadline exceeded
-
-### Signalsly Output
-
-**Probable Incident Category**  
-Payment dependency timeout.
-
-**Most Likely Hypotheses**
-
-1. Downstream Redis or database latency  
-2. Retry storm triggered by recent deployment  
-3. Connection pool exhaustion in payment worker  
-
-**Recommended Next Steps**
-
-1. Check latest deployment for `payment-service`  
-2. Inspect Redis / DB latency dashboards  
-3. Verify worker queue backlog and timeout rate  
-4. Compare with previous incidents tagged `payment-timeout`  
-5. Roll back deployment if latency spike began after release  
-
-**Evidence**
-
-- Runbook: `payment_timeout.md`  
-- Incident: `INC-1188_payment_retry_storm`  
-- Incident: `INC-1042_redis_latency_spike`  
+* **PagerDuty Webhook Integration:** Live webhook ingestion automatically triggers AI triage on incoming alerts.
+* **Hybrid Retrieval (Dense + Keyword):** Combines k-NN semantic search and BM25 keyword matching via Amazon OpenSearch Serverless.
+* **Precision Reranking:** Applies cross-encoder reranking (Amazon Rerank v1 via Bedrock) to top retrieval candidates to maximize precision.
+* **Agentic ReAct Workflow:** Uses a LangGraph-driven loop that parses incidents, rewrites queries, performs hybrid searches, and structures findings.
+* **Grounded & Auditable:** Hypotheses are strictly mapped to ingested runbooks and historical postmortems to eliminate hallucinations.
 
 ---
 
-## Key Features
-
-### PagerDuty Webhook Integration
-
-Signalsly integrates directly with PagerDuty webhooks for real-time incident ingestion.
-
-- Receives live incident alerts via webhook events  
-- Automatically extracts incident titles and descriptions  
-- Triggers AI triage workflows on new incidents  
-- Supports structured incident payload processing  
-- Enables real-time operational debugging assistance  
-
-**Example flow:**
-
-    Datadog Alert
-    → PagerDuty Incident
-    → Signalsly Webhook
-    → AI Triage Generation
-
----
-
-### Hybrid Retrieval (Dense + Keyword via OpenSearch)
-
-Combines **semantic vector search** and **BM25 keyword search** — both powered by Amazon OpenSearch Serverless — to find the most relevant operational knowledge.
-
-- **Dense search**: Embeds the query using Amazon Titan Embed v2 and performs KNN similarity search on OpenSearch  
-- **Keyword search**: Uses OpenSearch's built-in BM25 scoring on the `text` field  
-- **Hybrid search**: Fuses both result sets using Reciprocal Rank Fusion (RRF)  
-
-**Examples:**
-
-- Keyword search for exact errors (`CrashLoopBackOff`, `TimeoutError`)  
-- Semantic search for symptom descriptions ("service is slow after deploy")  
-- Hybrid search for mixed queries combining both  
-
----
-
-### Cross-Encoder Reranking (Amazon Rerank v1)
-
-After hybrid retrieval, candidates are reranked using **Amazon Rerank v1** via Bedrock to maximize precision.
-
-- Stage 1: Hybrid retrieval for **recall**  
-- Stage 2: Cross-encoder reranking for **precision**  
-
----
-
-### Incident Knowledge Base
-
-Indexes operational documents such as:
-
-- Runbooks (step-by-step debugging guides)  
-- Incident postmortems  
-- Architecture documentation  
-
----
-
-### Agentic Triage Workflow
-
-1. Receive PagerDuty incident webhook  
-2. Analyze the incident description  
-3. Rewrite the query  
-4. Retrieve relevant knowledge (hybrid + rerank)  
-5. Generate a structured triage plan  
-
----
-
-### Grounded Responses
-
-Every recommendation is backed by **runbook sections or past incidents**, reducing hallucinations.
-
----
-
-## System Architecture
-
-**Flow (linearized for GitHub compatibility):**
-
-1. Monitoring Alert / PagerDuty Incident  
-2. → PagerDuty Webhook Endpoint (FastAPI)  
-3. → Query Analysis (Claude via Bedrock)  
-4. → Query Rewrite Tool  
-5. → Incident Search Tool  
-   - Dense Search (Titan Embed v2 → OpenSearch KNN)  
-   - Keyword Search (OpenSearch BM25)  
-   - Hybrid Fusion (RRF)  
-   - Reranking (Amazon Rerank v1)  
-6. → Triage Planning Tool (Claude via Bedrock)  
-7. → Structured Incident Response  
-
----
-
-## AWS Bedrock Integration
-
-All AI capabilities are powered by **Amazon Bedrock** — no self-hosted models, no GPU management.
-
----
-
-## Tech Stack
-
-| Component           | Technology                                      |
-|--------------------|--------------------------------------------------|
-| Embedding Model     | Amazon Titan Embed Text v2 (1024 dims)          |
-| Reranker            | Amazon Rerank v1 (via Bedrock Agent Runtime)    |
-| LLM                 | Claude (Anthropic) via Amazon Bedrock           |
-| Vector + Text Store | Amazon OpenSearch Serverless                    |
-| Dense Search        | OpenSearch KNN                                  |
-| Keyword Search      | OpenSearch BM25                                 |
-| Hybrid Fusion       | Reciprocal Rank Fusion                          |
-| Agent Framework     | LangGraph                                       |
-| API Layer           | FastAPI                                         |
-| Incident Ingestion  | PagerDuty Webhooks                              |
-| Cloud Platform      | AWS                                             |
-
----
-
-## Project Structure
-
-    incident-copilot/
-    ├── agent/
-    │   ├── graph.py
-    │   └── nodes.py
-    ├── retrieval/
-    │   ├── dense_search.py
-    │   ├── keyword_search.py
-    │   ├── hybrid_search.py
-    │   └── reranker.py
-    ├── ingestion/
-    │   ├── loader.py
-    │   ├── chunker.py
-    │   └── embedder.py
-    ├── db/
-    │   └── opensearch_indexer.py
-    ├── api/
-    │   └── main.py
-    ├── data/
-    │   ├── runbooks/
-    │   └── incidents/
-    ├── processed/
-    │   ├── chunks.json
-    │   └── embedded_chunks.json
-    ├── requirements.txt
-    └── README.md
-
----
-
-## Example Dataset
-
-    data/
-    ├── runbooks/
-    │   ├── payment_timeout.md
-    │   ├── redis_latency.md
-    │   └── kafka_consumer_lag.md
-    └── incidents/
-        ├── inc_1023_payment_timeout.md
-        ├── inc_1188_retry_storm.md
-        └── inc_1342_worker_crashloop.md
-
-Each document is:
-
-1. Loaded  
-2. Chunked  
-3. Embedded (Titan Embed v2)  
-4. Indexed into OpenSearch  
-
----
-
-## Running the Project
-
-### Prerequisites
-
-- AWS account with Bedrock access  
-- AWS credentials configured  
-- OpenSearch Serverless collection  
-- PagerDuty account with webhook integration  
-- Python 3.10+  
-
----
-
-### 1. Configure AWS Credentials
-
-    [default]
-    aws_access_key_id = YOUR_ACCESS_KEY
-    aws_secret_access_key = YOUR_SECRET_KEY
-
-    [default]
-    region = us-east-1
-
----
-
-### 2. Enable Bedrock Models
-
-Enable:
-
-- `amazon.titan-embed-text-v2:0`  
-- `amazon.rerank-v1:0`  
-- Claude (Anthropic)  
-
----
-
-### 3. Create OpenSearch Collection
-
-- Type: Vector search  
-- Name: `incident-copilot`  
-- Save endpoint  
-
----
-
-### 4. Configure PagerDuty Webhook
-
-- Create a PagerDuty service integration  
-- Configure webhook endpoint:
-
-      POST /webhooks/pagerduty
-
-- Point webhook URL to Signalsly API
-- Enable incident trigger events
-
----
-
-### 5. Install Dependencies
-
-    pip install -r requirements.txt
-
----
-
-### 6. Ingest Documents
-
-    python ingestion/loader.py
-    python ingestion/chunker.py
-    python ingestion/embedder.py
-    python db/opensearch_indexer.py
-
----
-
-### 7. Test Retrieval
-
-    python retrieval/dense_search.py
-    python retrieval/keyword_search.py
-    python retrieval/reranker.py
-
----
-
-### 8. Start API
-
-    uvicorn api.main:app --reload
-
----
-
-### API Example
-
-**POST /webhooks/pagerduty**
-
-**Sample PagerDuty Payload**
-
-```json
-{
-  "event": {
-    "data": {
-      "title": "CrashLoopBackOff payment worker after deploy"
-    }
-  }
-}
+## 📊 System Architecture & Tech Stack
+
+```
+PagerDuty Alert → FastAPI Webhook → Query Rewrite Node → Hybrid Search Node
+                                                               ↓
+Grounded Triage Report ← Structured JSON Output ← Agent Reasoning Node (ReAct)
 ```
 
-**Response**
+| Component | Technology |
+|---|---|
+| **LLM** | Claude (Anthropic) via Amazon Bedrock |
+| **Embeddings** | Amazon Titan Embed Text v2 (1024 dims) |
+| **Reranker** | Amazon Rerank v1 (via Bedrock Agent Runtime) |
+| **Vector DB / Keyword Search** | Amazon OpenSearch Serverless (k-NN + BM25) |
+| **Agent Framework** | LangGraph (StateGraph ReAct Loop) |
+| **API / Ingestion** | FastAPI & PagerDuty Webhooks |
 
-```json
-{
-  "incident_type": "container crash loop",
-  "hypotheses": [
-    "Bad configuration in latest deployment",
-    "OOM kill due to memory limit",
-    "Missing environment variable or secret"
-  ],
-  "next_steps": [
-    "Check deployment diff for payment-worker",
-    "Inspect pod logs and events",
-    "Verify resource limits",
-    "Check rollback"
-  ],
-  "evidence": [
-    "Runbook: worker_crashloop.md",
-    "Incident: INC-1342_worker_crashloop"
-  ]
-}
+---
+
+## 📂 Project Structure
+
+```
+incident-copilot/
+├── agent/            # LangGraph architecture (graph.py, nodes.py)
+├── retrieval/        # Hybrid search & rerank (dense, keyword, reranker)
+├── ingestion/        # Document loaders, chunkers, and embedding pipeline
+├── db/               # OpenSearch database indexers
+├── api/              # FastAPI application server
+├── data/             # Source runbooks (.md) and historical incidents
+└── tests/            # Test suite and SRE Judge evaluation harness
 ```
 
 ---
 
-## How Retrieval Works
+## 🛠️ Quick Start
 
-### Dense Search
+### 1. Prerequisites
+* AWS Account with Bedrock & OpenSearch Serverless access.
+* Python 3.10+ and a configured PagerDuty account.
 
-- Input query  
-- → Embed (Titan)  
-- → KNN search  
-- → Top-K semantic matches  
+### 2. Configuration
+Configure your local environment or AWS credentials (`~/.aws/credentials`):
+```ini
+[default]
+aws_access_key_id = YOUR_ACCESS_KEY
+aws_secret_access_key = YOUR_SECRET_KEY
+region = us-east-1
+```
 
----
+### 3. Setup & Execution
+```bash
+# Install dependencies
+pip install -r requirements.txt
 
-### Keyword Search
+# Ingest and index runbooks
+python ingestion/loader.py
+python ingestion/chunker.py
+python ingestion/embedder.py
+python db/opensearch_indexer.py
 
-- Input query  
-- → BM25 match  
-- → Top-K keyword matches  
+# Test retrieval pipeline
+python retrieval/hybrid_search.py
 
----
-
-### Hybrid + Rerank
-
-1. Dense results (top 10)  
-2. Keyword results (top 10)  
-3. Merge via RRF  
-4. Rerank (Amazon Rerank v1)  
-5. Return top 5  
-
----
-
-## Why This Project
-
-Operational knowledge exists but is hard to use during incidents.
-
-Signalsly turns it into **actionable guidance** using AI + hybrid retrieval.
+# Launch FastAPI web server
+uvicorn api.main:app --reload
+```
 
 ---
 
-## Future Improvements
+## 🧪 Automated Evaluation & Reliability
 
-- Observability integration  
-- Slack collaboration integration  
-- Auto classification  
-- Feedback loop  
-- Guardrails  
-- Cost optimization  
-- Embedding cache  
+The framework integrates a continuous testing suite leveraging `pytest` with an independent **LLM-as-a-Judge** scoring model (`gemini-2.5-flash`):
+* **Evaluation Metrics:** Every generated triage response is systematically graded on a 1–5 rubric for **Groundedness** and **Actionability**.
+* **API Resiliency:** API integrations are guarded with `tenacity`-driven exponential backoff with randomized jitter to handle rate limit thresholds (429s).
+* **Fault-Tolerant Fallbacks:** Graph search nodes are wrapped in error handles to allow the agent to degrade gracefully using its pre-trained system knowledge if the search service is offline.
 
 ---
 
-## Appendix: Migration
+## 🛡️ Input & Output Guardrails
 
-### Before
-
-- Gemini → LLM  
-- bge-small → embeddings  
-- MiniLM → reranking  
-- Qdrant → vector DB  
-- rank_bm25 → keyword  
-
----
-
-### After
-
-- Claude → LLM  
-- Titan → embeddings  
-- Amazon Rerank → reranking  
-- OpenSearch → vector + keyword  
-- BM25 → keyword scoring  
-
----
-
-# Next Steps:
-
-## Adding Guardrails to Signalsly
-
-In incident copilot, the model consumes retrieved logs, runbooks, and incident data that may be **untrusted or poisoned**. This can lead to:
-
-- Prompt injection via retrieved content  
-- Hallucinated or irrelevant conclusions  
-- Suggestions of **dangerous production actions** (e.g., delete, restart, wipe systems)  
-
-Since incident copilot recommends **next steps during live incident triage**, unsafe outputs can cause **real operational damage**.
-
-Guardrails ensure the model:
-- Ignores malicious input  
-- Follows strict reasoning rules  
-- Produces structured, auditable outputs  
-- Does not suggest harmful actions  
-
----
-
-## 1. Guardrails to Sanitize Input (Retrieval Sanitization)
-
-### Why this is needed
-
-Retrieved documents are **not trustworthy** and may contain hidden prompt injections or malicious instructions. These must not influence the model.
-
-### Bedrock Features Used
-
-- **Guardrails → Content Filters (Prompt Attack – Input)**  
-- **Guardrails → Word Filters**  
-- **Guardrails → Denied Topics**
-
-### Why these features
-
-They scan all input **before it reaches the model**, blocking injection attempts and unsafe intent early.
-
----
-
-## 2. System Prompts for Claude Behavior Control
-
-### Why this is needed
-
-The model must:
-- Treat retrieved data as **untrusted evidence**
-- Avoid destructive actions  
-- Focus on **diagnosis, not execution**  
-- Base all claims on evidence  
-
-### Bedrock Features Used
-
-- **Converse API → System Prompt**  
-- **(Optional) Bedrock Agents → Instructions**
-
-### Why these features
-
-They enforce **consistent reasoning behavior** and strong safety constraints at the model level.
-
----
-
-## 3. Restrict Output to Structured JSON (Tool Use)
-
-### Why this is needed
-
-Structured output ensures:
-- Traceable claims with evidence  
-- Explicit identification of risks  
-- Easy validation and downstream use  
-
-### Bedrock Features Used
-
-- **Converse API → Tool Use (`toolConfig`)**  
-- **Forced Tool Selection (`toolChoice`)**
-
-### Why these features
-
-They ensure the model **always returns structured, schema-aligned output** instead of free text.
-
----
-
-## 4. Output Filtering Layer (Safety Enforcement)
-
-### Why this is needed
-
-Even after generation, the model may:
-- Suggest risky or destructive actions  
-- Produce unsafe or irrelevant responses  
-- Include sensitive information  
-
-### Bedrock Features Used
-
-- **Guardrails → Content Filters (Output)**  
-- **Guardrails → Denied Topics (Output)**  
-- **Guardrails → Sensitive Information Filters**  
-- **Guardrails → Contextual Grounding Check**
-
-### Why these features
-
-They validate the **final response before delivery**, ensuring:
-- No harmful suggestions reach engineers  
-- Responses are grounded in retrieved evidence  
-- Sensitive data is blocked or masked
-
----
-
-## 5. AWS Bedrock Guardrails
-
-In this project, we leverage AWS Bedrock Guardrails to establish a robust and secure operational boundary around our triage assistant. Specifically, we implement content filters to intercept prompt injection and jailbreak attempts targeting the retrieved logs and runbooks, and word/denied-topic filters to prevent the model from suggesting dangerous production actions such as deleting or rewriting critical system states. Furthermore, we configure Bedrock's native Converse API tool-calling constraints to enforce structured JSON output alongside contextual grounding checks that validate all final suggestions against our ingested knowledge base, ensuring every recommendation is both safe to execute and fully backed by verified evidence.
-
+To prevent prompt injections via untrusted logs and suggestions of dangerous production actions (e.g., system wipes), Signalsly incorporates:
+1. **AWS Bedrock Guardrails:** Sanitizes inputs and monitors outputs for malicious instructions, sensitive data leakage, or denied topics.
+2. **Contextual Grounding Checks:** Re-validates final responses against retrieved runbooks to block ungrounded advice.
+3. **Structured Schemas:** Forced tool use binds agent outputs to strict JSON schemas, ensuring complete traceability.
